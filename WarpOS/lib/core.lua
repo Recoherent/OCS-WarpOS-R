@@ -5,7 +5,7 @@ local computer = computer
 local component = component
 
 -- set version.
-_G._VERSION = "WarpOS 0.8"
+_G._VERSION = "WarpOS 0.8r1"
 
 -- get monitor in order.
 local gpu = component.list("gpu", true)()
@@ -68,4 +68,5 @@ end
 
 t.print("Loading done. Initializing main program.")
 
+computer.beep()
 raw_loadfile("/main.lua")()

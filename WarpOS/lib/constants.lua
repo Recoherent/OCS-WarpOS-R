@@ -4,7 +4,9 @@ constants.mainOptions = { "Settings", "Navigation", "Crew", "Advanced" }
 
 constants.settingOptions = { "Set dimensions", "Set name" }
 
-constants.navOptions = { "Jump", "Set target", "Set movement" }
+constants.navOptions = { "Jump", "Set target", "Set movement", "Hyperdrive" }
+
+constants.crewOptions = { "<NOT IMPLEMENTED>" }
 
 constants.advancedOptions = { "Maintenance mode", "Disable core" }
 

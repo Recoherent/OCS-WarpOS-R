@@ -1,3 +1,4 @@
+--opencomputers is angry at me!
 local t = require("terminal")
 local colors = require("colors")
 local const = require("constants")
@@ -59,7 +60,7 @@ local function getText()
 end
 
 local function generateSelector(options)
-    t.setBackground(getColor("black"))
+    t.setBackground(getColor("gray"))
     t.setForeground(getColor("white"))
 
     local _, y = t.getCursor()
@@ -69,9 +70,11 @@ local function generateSelector(options)
     local function toggleBackgroundColor()
         toggle = not toggle
         if toggle then
-            t.setBackground(getColor("black"))
-        else
             t.setBackground(getColor("gray"))
+            t.setForeground(getColor("white"))
+        else
+            t.setBackground(getColor("silver"))
+            t.setForeground(getColor("black"))
         end
     end
 
@@ -96,8 +99,8 @@ end
 
 local function drawBanner(page)
     local curBg = gpu.getBackground()
-    t.setBackground(getColor("black"))
-    t.setForeground(getColor("yellow"))
+    t.setBackground(getColor("silver"))
+    t.setForeground(getColor("cyan"))
 
     gpu.fill(1, 1, w, 1, " ")
 
@@ -116,16 +119,20 @@ local function printError(text)
 end
 
 local function prepPage(page)
-    t.setBackground(getColor("silver"))
+    t.setBackground(getColor("black"))
     t.clear()
     drawBanner(page)
     t.setForeground(getColor("white"))
 end
 
+local function noPage()
+    printError("This function does not exist.")
+end
+
 local function displayMainScreen()
     prepPage("Home")
-    t.setForeground(getColor("yellow"))
-    t.setBackground(getColor("silver"))
+    t.setForeground(getColor("cyan"))
+    t.setBackground(getColor("black"))
 
     t.setCursor(8, 4)
     t.print("Welcome to")
@@ -136,6 +143,16 @@ local function displayMainScreen()
 
     t.setForeground(getColor("white"))
     t.print(verText)
+
+    t.setCursor(52,12)
+    t.write("Original by ")
+    t.setForeground(getColor("yellow"))
+    t.print("IpsumCapra")
+    t.setForeground(getColor("white"))
+    t.setCursor(54,13)
+    t.write("Edited by ")
+    t.setForeground(getColor("cyan"))
+    t.print("Recoherent")
 
     t.setCursor(1, 18)
     generateSelector(const.mainOptions)
@@ -151,8 +168,8 @@ local function displaySettingsScreen()
 
     prepPage("Settings")
 
-    t.setBackground(getColor("black"))
-    t.setForeground(getColor("yellow"))
+    t.setBackground(getColor("cyan"))
+    t.setForeground(getColor("white"))
     gpu.fill(1, 3, w, 1, " ")
     t.setCursor(1, 3)
     t.print("Ship information:")
@@ -186,27 +203,30 @@ end
 local function displayNavScreen()
     local position = { core.getLocalPosition() }
     local movement = { core.movement() }
+    local hs = core.isInHyperspace()
 
     prepPage("Navigation")
 
-    t.setBackground(getColor("black"))
-    t.setForeground(getColor("yellow"))
+    t.setBackground(getColor("cyan"))
+    t.setForeground(getColor("white"))
     gpu.fill(1, 3, w, 1, " ")
     t.setCursor(1, 3)
     t.print("Current position:")
 
     t.setBackground(getColor("gray"))
     t.setForeground(getColor("white"))
-    gpu.fill(1, 4, w, 3, " ")
+    gpu.fill(1, 4, w, 4, " ")
     t.write("x: ")
     t.print(tostring(position[1]))
     t.write("y: ")
     t.print(tostring(position[2]))
     t.write("z: ")
     t.print(tostring(position[3]))
+    t.write("Hyperspace: ")
+    t.print(tostring(hs))
 
-    t.setBackground(getColor("black"))
-    t.setForeground(getColor("yellow"))
+    t.setBackground(getColor("cyan"))
+    t.setForeground(getColor("white"))
     gpu.fill(1, 9, w, 1, " ")
     t.setCursor(1, 9)
     t.print("Movement settings:")
@@ -234,7 +254,7 @@ local function displayCrewScreen()
     t.setBackground(getColor("silver"))
 
     t.setCursor(1, 18)
-    generateSelector(const.advancedOptions)
+    generateSelector(const.crewOptions)
 end
 
 local function displayAdvancedScreen()
@@ -242,8 +262,8 @@ local function displayAdvancedScreen()
 
     prepPage("Advanced settings")
 
-    t.setBackground(getColor("black"))
-    t.setForeground(getColor("yellow"))
+    t.setBackground(getColor("cyan"))
+    t.setForeground(getColor("white"))
     gpu.fill(1, 3, w, 1, " ")
     t.setCursor(1, 3)
     t.print("Current mode:")
@@ -253,8 +273,8 @@ local function displayAdvancedScreen()
     gpu.fill(1, 4, w, 1, " ")
     t.print(core.command())
 
-    t.setBackground(getColor("black"))
-    t.setForeground(getColor("yellow"))
+    t.setBackground(getColor("cyan"))
+    t.setForeground(getColor("white"))
     gpu.fill(1, 6, w, 1, " ")
     t.setCursor(1, 6)
     t.print("Assembly status:")
@@ -427,8 +447,12 @@ local function movementScreen()
     displayNavScreen()
 end
 
+local function targetingScreen()
+    noPage()
+end
+
 local function jump()
-    printError("Jump? [Y/n]")
+    printError("Jump? [Y/N]")
     local key = getKey()
     if key == "y" or key == "\13" then
         core.command("MANUAL", true)
@@ -436,6 +460,25 @@ local function jump()
     displayNavScreen()
 end
 
+local function hyperdrive()
+    local hs = core.isInHyperspace()
+    local mass, vol = core.getShipSize()
+    if mass < 4000 then
+        printError("Ship too small! Aborting.")
+        return
+    end
+    if hs then
+        printError("Exit hyperspace? [Y/N]")
+    else
+        printError("Enter hyperspace? [Y/N]")
+    end
+    local key = getKey()
+    if key == "y" or "\13" then
+        core.command("HYPERDRIVE", true)
+    end
+    displayNavScreen()
+end
+    
 local function maintenanceMode()
     core.command("MAINTENANCE", false)
     displayAdvancedScreen()
@@ -473,9 +516,12 @@ local actions = {
     navigation = {
         jump,
         targetingScreen,
-        movementScreen
+        movementScreen,
+        hyperdrive
     },
-    crew = {},
+    crew = {
+        noPage
+    },
     advanced = {
         maintenanceMode,
         disableCore
