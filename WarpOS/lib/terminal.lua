@@ -9,6 +9,9 @@ local w, h = gpu.maxResolution()
 local foreground = 0xFFFFFF
 local background = 0x000000
 
+local colors = require("colors")
+local tier = tier
+
 terminal.logo = {
     { 1, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1 },
     { 1, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0 },
@@ -57,6 +60,11 @@ function terminal.clear()
     y = 1
 end
 
+function terminal.getColor(color)
+    --return gpu.getPaletteColor(colors[color])
+    return colors[color]
+end
+
 function terminal.setForeground(color)
     foreground = color
     gpu.setForeground(color)
@@ -76,9 +84,28 @@ function terminal.printMap(map, double)
                 gpu.setBackground(background)
             end
             if double then
-                gpu.fill(1 + 2 * (setX - 1) + x - 1, setY + y - 1, 2, 1, " ")
+                --if tier == 3 then
+                --    gpu.fill(1 + 4 * (setX - 1) + x - 1, 2 * setY + y - 1, 4, 2, " ")
+                --else
+                    gpu.fill(1 + 2 * (setX - 1) + x - 1, setY + y - 1, 2, 1, " ")
+                --end
             else
                 gpu.set(setX + x - 1, setY + y - 1, " ")
+            end
+        end
+    end
+end
+
+function terminal.printOverlayMap(map, double)
+    for setY, row in ipairs(map) do
+        for setX, v in ipairs(row) do
+            gpu.setBackground(foreground)
+            if v == 1 then
+                if double then
+                    gpu.fill(1 + 2 * (setX - 1) + x - 1, setY + y - 1, 2, 1, " ")
+                else
+                    gpu.set(setX + x - 1, setY + y - 1, " ")
+                end
             end
         end
     end

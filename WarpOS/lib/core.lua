@@ -5,7 +5,7 @@ local computer = computer
 local component = component
 
 -- set version.
-_G._VERSION = "WarpOS 0.8r1"
+_G._VERSION = "WarpOS 0.8r2"
 
 -- get monitor in order.
 local gpu = component.list("gpu", true)()
@@ -33,6 +33,13 @@ gpu.setBackground(0x000000)
 gpu.setForeground(0xFFFFFF)
 gpu.fill(1, 1, w, h, " ")
 
+if gpu.maxDepth() < 8 then
+    _G.tier = 2
+else
+    _G.tier = 3
+end
+gpu.setResolution(80, 25)
+
 function require(modname)
     return raw_loadfile("/lib/" .. modname .. ".lua")()
 end
@@ -43,6 +50,20 @@ function reloadComponents()
     _G.gpu = component.proxy(component.list("gpu")())
     _G.screen = component.proxy(component.list("screen")())
     _G.core = component.proxy(component.list("warpdriveShipCore")())
+
+    local diskAddr = component.list("disk_drive")()
+    if diskAddr ~= nil then
+        diskAddr = component.proxy(component.list("disk_drive")())
+        if not diskAddr.isEmpty() then
+            local diskOld = _G.disk
+            _G.disk = component.proxy(component.proxy(component.list("disk_drive")()).media())
+            if _G.disk ~= diskOld then computer.beep() end
+        else
+            _G.disk = false
+        end
+    else
+        _G.disk = false
+    end
 end
 
 reloadComponents()
@@ -64,6 +85,22 @@ if core == nil then
     computer.shutdown()
 else
     t.print("> Found warpdrive core.")
+end
+
+t.print("> Looking for loaded floppy disk.")
+local diskAddr = component.list("disk_drive")()
+if diskAddr ~= nil then
+    diskAddr = component.proxy(component.list("disk_drive")())
+    if not diskAddr.isEmpty() then
+        t.print("> Located. Loading proxy.")
+        _G.disk = component.proxy(component.proxy(component.list("disk_drive")()).media())
+    else
+        t.print("> No disk loaded. Diskvar set to \"false\"")
+        _G.disk = false
+    end
+else
+    t.print("> No disk drive. Diskvar set to \"false\"")
+    _G.disk = false
 end
 
 t.print("Loading done. Initializing main program.")

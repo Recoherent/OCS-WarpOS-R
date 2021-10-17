@@ -1,19 +1,20 @@
---opencomputers is angry at me!
+--i'm recoherent, and i'll be your commentator for today
 local t = require("terminal")
 local colors = require("colors")
 local const = require("constants")
+local map = require("map")
 local gpu = gpu
 local core = core
 local screen = screen
 local computer = computer
+local tier = tier
 
 local page = "main"
+local loadedCoordinates = {}
 
 local w, h = gpu.getResolution()
 
-local function getColor(color)
-    return gpu.getPaletteColor(colors[color])
-end
+
 
 local function getKey()
     while true do
@@ -60,8 +61,8 @@ local function getText()
 end
 
 local function generateSelector(options)
-    t.setBackground(getColor("gray"))
-    t.setForeground(getColor("white"))
+    t.setBackground(t.getColor("gray"))
+    t.setForeground(t.getColor("white"))
 
     local _, y = t.getCursor()
 
@@ -70,11 +71,11 @@ local function generateSelector(options)
     local function toggleBackgroundColor()
         toggle = not toggle
         if toggle then
-            t.setBackground(getColor("gray"))
-            t.setForeground(getColor("white"))
+            t.setBackground(t.getColor("gray"))
+            t.setForeground(t.getColor("white"))
         else
-            t.setBackground(getColor("silver"))
-            t.setForeground(getColor("black"))
+            t.setBackground(t.getColor("silver"))
+            t.setForeground(t.getColor("black"))
         end
     end
 
@@ -99,8 +100,8 @@ end
 
 local function drawBanner(page)
     local curBg = gpu.getBackground()
-    t.setBackground(getColor("silver"))
-    t.setForeground(getColor("cyan"))
+    t.setBackground(t.getColor("silver"))
+    t.setForeground(t.getColor("cyan"))
 
     gpu.fill(1, 1, w, 1, " ")
 
@@ -112,17 +113,17 @@ local function drawBanner(page)
 end
 
 local function printError(text)
-    t.setBackground(getColor("red"))
+    t.setBackground(t.getColor("red"))
     gpu.fill(1, h, w, 1, " ")
     t.setCursor((w - #text) / 2, h)
     t.write(text)
 end
 
 local function prepPage(page)
-    t.setBackground(getColor("black"))
+    t.setBackground(t.getColor("black"))
     t.clear()
     drawBanner(page)
-    t.setForeground(getColor("white"))
+    t.setForeground(t.getColor("white"))
 end
 
 local function noPage()
@@ -131,8 +132,8 @@ end
 
 local function displayMainScreen()
     prepPage("Home")
-    t.setForeground(getColor("cyan"))
-    t.setBackground(getColor("black"))
+    t.setForeground(t.getColor("cyan"))
+    t.setBackground(t.getColor("black"))
 
     t.setCursor(8, 4)
     t.print("Welcome to")
@@ -141,17 +142,17 @@ local function displayMainScreen()
     local verText = "Version " .. string.gsub(_G._VERSION, "WarpOS ", "")
     t.setCursor(74 - #verText, 11)
 
-    t.setForeground(getColor("white"))
+    t.setForeground(t.getColor("white"))
     t.print(verText)
 
     t.setCursor(52,12)
     t.write("Original by ")
-    t.setForeground(getColor("yellow"))
+    t.setForeground(t.getColor("yellow"))
     t.print("IpsumCapra")
-    t.setForeground(getColor("white"))
+    t.setForeground(t.getColor("white"))
     t.setCursor(54,13)
     t.write("Edited by ")
-    t.setForeground(getColor("cyan"))
+    t.setForeground(t.getColor("cyan"))
     t.print("Recoherent")
 
     t.setCursor(1, 18)
@@ -168,14 +169,14 @@ local function displaySettingsScreen()
 
     prepPage("Settings")
 
-    t.setBackground(getColor("cyan"))
-    t.setForeground(getColor("white"))
+    t.setBackground(t.getColor("cyan"))
+    t.setForeground(t.getColor("white"))
     gpu.fill(1, 3, w, 1, " ")
     t.setCursor(1, 3)
     t.print("Ship information:")
 
-    t.setBackground(getColor("gray"))
-    t.setForeground(getColor("white"))
+    t.setBackground(t.getColor("gray"))
+    t.setForeground(t.getColor("white"))
     gpu.fill(1, 4, w, 13, " ")
     t.print("Current position")
     t.write("x: ")
@@ -207,14 +208,14 @@ local function displayNavScreen()
 
     prepPage("Navigation")
 
-    t.setBackground(getColor("cyan"))
-    t.setForeground(getColor("white"))
+    t.setBackground(t.getColor("cyan"))
+    t.setForeground(t.getColor("white"))
     gpu.fill(1, 3, w, 1, " ")
     t.setCursor(1, 3)
     t.print("Current position:")
 
-    t.setBackground(getColor("gray"))
-    t.setForeground(getColor("white"))
+    t.setBackground(t.getColor("gray"))
+    t.setForeground(t.getColor("white"))
     gpu.fill(1, 4, w, 4, " ")
     t.write("x: ")
     t.print(tostring(position[1]))
@@ -225,14 +226,14 @@ local function displayNavScreen()
     t.write("Hyperspace: ")
     t.print(tostring(hs))
 
-    t.setBackground(getColor("cyan"))
-    t.setForeground(getColor("white"))
+    t.setBackground(t.getColor("cyan"))
+    t.setForeground(t.getColor("white"))
     gpu.fill(1, 9, w, 1, " ")
     t.setCursor(1, 9)
     t.print("Movement settings:")
 
-    t.setBackground(getColor("gray"))
-    t.setForeground(getColor("white"))
+    t.setBackground(t.getColor("gray"))
+    t.setForeground(t.getColor("white"))
     gpu.fill(1, 10, w, 6, " ")
     t.write("x: ")
     t.print(tostring(movement[1]))
@@ -248,10 +249,100 @@ local function displayNavScreen()
     generateSelector(const.navOptions)
 end
 
+local function displayMapScreen()
+    local position = { core.getLocalPosition() }
+    local sx, sy = map.parseLocation(position[1], position[3])
+    local hs = core.isInHyperspace()
+    local cname, cdesc, ccolor = " ", " ", 0x000000
+    local cx, cz = 0, 0
+
+    gpu.setResolution(gpu.maxResolution())
+    w, h = gpu.getResolution()
+    prepPage("Map")
+
+    if loadedCoordinates == {} then
+        table.insert(loadedCoordinates, {
+            " ",
+            " ",
+            "0",
+            "0",
+            "40",
+            "0x000000",
+            " "
+        })
+    end
+
+    t.setBackground(t.getColor("cyan"))
+    t.setForeground(t.getColor("white"))
+    gpu.fill(1, 32, 79, 1, " ")
+    t.setCursor(1, 32)
+    t.print("Ship status:")
+
+    t.setBackground(t.getColor("gray"))
+    t.setForeground(t.getColor("white"))
+    gpu.fill(1, 33, 79, 4, " ")
+    t.write("x: ")
+    t.print(tostring(position[1]))
+    t.write("y: ")
+    t.print(tostring(position[2]))
+    t.write("z: ")
+    t.print(tostring(position[3]))
+    t.write("Hyperspace: ")
+    t.print(tostring(hs))
+
+    t.setCursor(1, 38)
+    generateSelector(const.mapOptions)
+
+    map.setMapCenter(120, 21)
+    t.setBackground(t.getColor("black"))
+    gpu.fill(80, 2, 81, 40, " ")
+    --t.setBackground(t.getColor("gray"))
+    --gpu.fill(101, 12, 60, 30, " ")
+
+    map.drawAllCelestials(loadedCoordinates)
+    map.drawPoint(sx, sy, "(", ")", 0xFFFFFF, 0x000000)
+
+    cname, cdesc, ccolor = map.drawCursor(loadedCoordinates)
+
+    t.setBackground(ccolor)
+    gpu.fill(1, 3, 79, 1, " ")
+    t.setBackground(t.getColor("black"))
+    t.setForeground(ccolor)
+    t.setCursor(2, 3)
+    t.print(" " .. cname .. " ")
+
+    t.setForeground(t.getColor("white"))
+    t.setCursor(1, 4)
+    t.print(cdesc)
+
+    cx, cz = map.cursorLocation()
+    t.setCursor(1, 6)
+    t.write("x: ")
+    t.print(tostring(cx))
+    t.write("y: ")
+    t.print(tostring(cz))
+
+end
+
+local function loadFromDisk()
+    local rawCoords = map.parseDisk()
+    if rawCoords ~= "no file" then
+        local parsedCoords = map.parseAllCoords(rawCoords)
+        local position = { core.getLocalPosition() }
+        local sx, sy = map.parseLocation(position[1], position[3])
+        
+        loadedCoordinates = map.addNewCoordinates(loadedCoordinates, parsedCoords)
+        displayMapScreen()
+    else
+        printError("No coordinate file found.")
+    end
+
+end
+
 local function displayCrewScreen()
     prepPage("Crew")
 
-    t.setBackground(getColor("silver"))
+    t.setBackground(t.getColor("silver"))
 
     t.setCursor(1, 18)
     generateSelector(const.crewOptions)
@@ -262,25 +353,25 @@ local function displayAdvancedScreen()
 
     prepPage("Advanced settings")
 
-    t.setBackground(getColor("cyan"))
-    t.setForeground(getColor("white"))
+    t.setBackground(t.getColor("cyan"))
+    t.setForeground(t.getColor("white"))
     gpu.fill(1, 3, w, 1, " ")
     t.setCursor(1, 3)
     t.print("Current mode:")
 
-    t.setBackground(getColor("gray"))
-    t.setForeground(getColor("white"))
+    t.setBackground(t.getColor("gray"))
+    t.setForeground(t.getColor("white"))
     gpu.fill(1, 4, w, 1, " ")
     t.print(core.command())
 
-    t.setBackground(getColor("cyan"))
-    t.setForeground(getColor("white"))
+    t.setBackground(t.getColor("cyan"))
+    t.setForeground(t.getColor("white"))
     gpu.fill(1, 6, w, 1, " ")
     t.setCursor(1, 6)
     t.print("Assembly status:")
 
-    t.setBackground(getColor("gray"))
-    t.setForeground(getColor("white"))
+    t.setBackground(t.getColor("gray"))
+    t.setForeground(t.getColor("white"))
     gpu.fill(1, 7, w, 2, " ")
     t.print("Valid: " .. tostring(isValid))
     t.print("Message: " .. msg)
@@ -291,11 +382,11 @@ end
 
 local function namingScreen()
     prepPage("Naming")
-    t.setBackground(getColor("black"))
+    t.setBackground(t.getColor("black"))
     t.setCursor(1, 3)
     gpu.fill(1, 3, w, 1, " ")
     t.print("Enter a new name and press enter to confirm.")
-    t.setBackground(getColor("gray"))
+    t.setBackground(t.getColor("gray"))
     gpu.fill(1, 4, w, 1, " ")
     t.write("New name: ")
     core.name(getText())
@@ -316,7 +407,7 @@ local function dimensionsScreen()
     }
 
     prepPage("Dimensions")
-    t.setBackground(getColor("black"))
+    t.setBackground(t.getColor("black"))
     t.setCursor(1, 3)
     gpu.fill(1, 3, w, 1, " ")
     t.print("Enter new dimensions. Press enter to keep current value.")
@@ -325,7 +416,7 @@ local function dimensionsScreen()
 
     for k, v in pairs(dimensions) do
         while true do
-            t.setBackground(getColor("gray"))
+            t.setBackground(t.getColor("gray"))
             t.setCursor(1, y)
             gpu.fill(1, y, w, 1, " ")
             t.write(k .. "(" .. v .. ")" .. ": ")
@@ -369,7 +460,7 @@ local function movementScreen()
     }
 
     prepPage("Movement")
-    t.setBackground(getColor("black"))
+    t.setBackground(t.getColor("black"))
     t.setCursor(1, 3)
     gpu.fill(1, 3, w, 1, " ")
     t.print("Enter movement values. Negative value is opposite direction.")
@@ -378,7 +469,7 @@ local function movementScreen()
     for k, v in pairs(newMovement) do
         while true do
             printError("Choose a value between " .. pos[y - 3] + neg[y - 3] .. " and " .. max)
-            t.setBackground(getColor("gray"))
+            t.setBackground(t.getColor("gray"))
             t.setCursor(1, y)
             gpu.fill(1, y, w, 1, " ")
             t.write(k .. "(" .. v .. ")" .. ": ")
@@ -400,12 +491,12 @@ local function movementScreen()
     end
     prepPage("Rotation")
 
-    t.setBackground(getColor("black"))
+    t.setBackground(t.getColor("black"))
     t.setCursor(1, 3)
     gpu.fill(1, 3, w, 1, " ")
     t.print("Set rotation using WASD.")
 
-    t.setBackground(getColor("gray"))
+    t.setBackground(t.getColor("gray"))
     t.setCursor(1, 4)
     gpu.fill(1, 4, w, 1, " ")
 
@@ -493,12 +584,15 @@ local screens = {
     main = displayMainScreen,
     settings = displaySettingsScreen,
     navigation = displayNavScreen,
+    map = displayMapScreen,
     crew = displayCrewScreen,
     advanced = displayAdvancedScreen
 }
 
 local function switchToScreen(screen)
     page = screen
+    gpu.setResolution(80, 25)
+    w, h = gpu.getResolution()
     screens[screen]()
 end
 
@@ -506,6 +600,7 @@ local actions = {
     main = {
         "settings",
         "navigation",
+        "map",
         "crew",
         "advanced"
     },
@@ -518,6 +613,11 @@ local actions = {
         targetingScreen,
         movementScreen,
         hyperdrive
+    },
+    map = {
+        loadFromDisk,
+        noPage,
+        noPage
     },
     crew = {
         noPage
@@ -532,17 +632,35 @@ if core.name() == "" then
     namingScreen()
 end
 
+map.setCursor(5, 5)
 displayMainScreen()
 
 while true do
     local key = getKey()
     if key == "0" and page ~= "main" then
         switchToScreen("main")
+    -- literal clunkiest implementation in existence
+    elseif key == "w" and page == "map" then
+        map.moveCursor(0, -1)
+        displayMapScreen()
+    elseif key == "a" and page == "map" then
+        map.moveCursor(-1, 0)
+        displayMapScreen()
+    elseif key == "s" and page == "map" then
+        map.moveCursor(0, 1)
+        displayMapScreen()
+    elseif key == "d" and page == "map" then
+        map.moveCursor(1, 0)
+        displayMapScreen()
     else
         key = tonumber(key)
         if actions[page][key] ~= nil then
             if page == "main" then
-                switchToScreen(actions["main"][key])
+                if actions["main"][key] == "map" and tier ~= 3 then
+                    printError("The map screen requires t3 graphics")
+                else
+                    switchToScreen(actions["main"][key])
+                end
             else
                 actions[page][key]()
             end
