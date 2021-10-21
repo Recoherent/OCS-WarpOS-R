@@ -1,15 +1,46 @@
-How to install WarpOS
+This is my heavy update to IpsumCapra's WarpOS script, used to run starships from the WarpDrive mod. 
+Its base features include:
+  - Warpdrive ship movement.
+  - Ship naming and size management.
+My updated version currently adds, in addition to the base functionality of WarpOS:
+  - Hyperdrive functionality.
+  - Vague support for T3 graphics.
+  - A functioning map screen, capable of loading coordinates from floppy disks.
+  - An installation program for installing itself to new drives.
+Credit for the base operating system, bootloading code, and much of the libraries goes to them. Without their base, this project would be nigh-worthless.
 
-Requirements:
+Minimum Requirements:
   - A computer with a keyboard, a lvl2 screen, a warpdrive ship controller, and at least a tier 2 gpu.
   You'll also need some memory, a hard disk drive, and a Lua Bios EEPROM, regular stuff to keep a PC running.
-  - A computer running OpenOS with a free slot for the HDD you intend to use.
+  - The map screen requires a t3 screen and gpu to function. All other functionality is usable with t2 parts.
   
 
-Installing:
+Installing From Scratch:
+  - You will need a computer running OpenOS with a free slot for the HDD you intend to use.
   - Put the HDD you intend to use into the computer already running OpenOS.
   - Navigate to the mount point of this HDD.
   - Create the lib directory here.
   - Create all files in their respective directories, and paste the code that can be found in this repository in them. (copy the text, and then press insert in the OpenOS text editor.)
   - Remove the HDD and put it into the ship computer.
-  Now when you turn on the computer it should start running WarpOS. Have fun!
+  Now when you turn on the computer it should start running WarpOS.
+
+Software Installation:
+  - If you already have a copy of WarpOS installed somewhere (like a floppy disk), there is an in-built utility to install itself to other drives.
+  - Navigate to the "Advanced" tab, and select "Install to disk".
+  - Select the address corresponding to the drive you are installing on. This drive should be empty!
+  - Let it do its thing. The drive will now have a full copy of WarpOS installed on it, and can be used as a boot medium wherever else is necessary.
+  
+  
+ Loading Coordinates:
+  - Coordinate sets are data structures used to display celestial bodies on the map screen.
+  - You can load as many as you want to the OS at once, but they will not persist between reboots.
+  - Coordinates are loaded from floppy disks that have a file called "coords" in their root directory.
+  - Insert one of these and hit the "Load from disk" button on the map screen to scan it for coordinates.
+  - The formatting of "coords" is as such:
+    Name|Description|X|Y|Size|Hex Color|Identifying Character
+  - Coordinate sets are separated by line breaks.
+  - The name and description are what shows up when selected by the cursor in the map screen.
+  - X and Y determine the position of the center of the celestial body. This can range from -20 to 20, and corresponds to the X/Z coordinates of the body, divided by 10,000.
+  - Size determines the square size of the body. Only use even numbers.
+  - The color is a hexadecimal color that the body will be drawn in.
+  - Identifying character is a unique character for each body, used to properly fetch the name and description when selected.
