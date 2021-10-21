@@ -10,7 +10,7 @@ constants.mapOptions = { "Load coordinates from disk", "Save coordinates to memo
 
 constants.crewOptions = { "<NOT IMPLEMENTED>" }
 
-constants.advancedOptions = { "Maintenance mode", "Disable core" }
+constants.advancedOptions = { "Maintenance mode", "Disable core", "Install to drive" }
 
 constants.rotationValues = {
     {"Front", "w"},

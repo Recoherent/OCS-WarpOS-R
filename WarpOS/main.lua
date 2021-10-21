@@ -8,6 +8,7 @@ local core = core
 local screen = screen
 local computer = computer
 local tier = tier
+local component = component
 
 local page = "main"
 local loadedCoordinates = {}
@@ -580,6 +581,78 @@ local function disableCore()
     displayAdvancedScreen()
 end
 
+local function installToHDD()
+    prepPage("Installation")
+    local filesystems = component.list("filesystem")
+    local addresses = {}
+    local components = {}
+    local installDirectory
+    local currentInstall = "die"
+    for address, componentType in filesystems do
+        table.insert(addresses, address)
+        table.insert(components, componentType)
+        if component.proxy(address).exists("init.lua") then
+            currentInstall = component.proxy(address)
+        end
+    end
+    local function installCopy(path)
+        if string.sub(path, -1, -1) == "/" then
+            installDirectory.makeDirectory(path)
+        else
+            local fromFile = currentInstall.open(path, "r")
+            local toFile = installDirectory.open(path, "a")
+
+            local index = 0
+
+            for iteratio=1,math.ceil(currentInstall.size(path) / 2048) do
+                installDirectory.write(toFile, currentInstall.read(fromFile, 2048))
+                index = index + 2048
+                currentInstall.seek(fromFile, "set", index)
+            end
+
+            currentInstall.close(fromFile)
+            installDirectory.close(toFile)
+        end
+    end
+    
+    t.setBackground(t.getColor("cyan"))
+    t.setForeground(t.getColor("white"))
+    gpu.fill(1, 13, w, 1, " ")
+    t.setCursor(1, 13)
+    t.print("Select a drive to install to:")
+    t.setBackground(t.getColor("gray"))
+    t.setForeground(t.getColor("white"))
+    gpu.fill(1, 14, w, 2, " ")
+    t.setCursor(1, 14)
+    t.print("This will install the OS on an empty drive.")
+    t.print("It is important that the drive is empty.")
+
+    t.setCursor(1, 16)
+    t.setBackground(t.getColor("red"))
+    t.setForeground(t.getColor("white"))
+    gpu.fill(1, 16, w, 1, " ")
+    t.print("Make certain you are choosing the right address!")
+
+    t.setCursor(1, 18)
+    generateSelector(addresses)
+    
+    local addressChoice = getKey()
+    addressChoice = addresses[tonumber(addressChoice)]
+    if addressChoice ~= nil then
+        installDirectory = component.proxy(addressChoice)
+        for i,v in ipairs(currentInstall.list("/")) do 
+            installCopy(v)
+        end
+        for i,v in ipairs(currentInstall.list("/lib")) do 
+            installCopy("/lib/" .. v)
+        end
+        --printError(addressChoice)
+    else
+        displayAdvancedScreen()
+    end
+    printError("Success. Please press 0.")
+end
+
 local screens = {
     main = displayMainScreen,
     settings = displaySettingsScreen,
@@ -624,7 +697,8 @@ local actions = {
     },
     advanced = {
         maintenanceMode,
-        disableCore
+        disableCore,
+        installToHDD
     }
 }
 
