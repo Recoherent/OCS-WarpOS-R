@@ -24,6 +24,7 @@ local function getKey()
             return string.char(char), char
         end
         reloadComponents()
+        gpu.setResolution(w, h)
         if not gpu.getScreen() then
             local bg = gpu.getBackground()
             local fg = gpu.getForeground()
