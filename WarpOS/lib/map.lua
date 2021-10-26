@@ -26,15 +26,15 @@ end
 
 --reads coordinates from a loaded disk and hands back a table with them all
 function map.parseDisk()
-    -- making sure that there's a disk in there that has the required "coords" file
+    -- making sure that there's a disk in there that has the required "coords.txt" file
     reloadComponents()
     disk = _G.disk
     if disk ~= false then
-        if disk.exists("coords") then
-            local file = disk.open("coords")
+        if disk.exists("coords.txt") then
+            local file = disk.open("coords.txt")
             -- parse the file's full data into a table. entries separated by line break
             local fullCoordSet = {}
-            for v in string.gmatch(disk.read(file, disk.size("coords")), "%C+") do
+            for v in string.gmatch(disk.read(file, disk.size("coords.txt")), "%C+") do
                 table.insert(fullCoordSet, v)
             end
             disk.close(file)
